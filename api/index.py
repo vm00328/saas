@@ -11,7 +11,7 @@ def idea():
     prompt = [
         {
             "role": "user",
-            "content": "Come up with a new business idea acting as a second source of income - ideally one that does not require a lot of upfront investment.",
+            "content": "Come up with a new business idea acting as a second source of income - ideally one that does not require a lot of upfront investment. Your response shall be formatted with headings, sub-headings and bullet points",
         }
     ]
     stream = client.chat.completions.create(
