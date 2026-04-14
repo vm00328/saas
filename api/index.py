@@ -1,12 +1,26 @@
-from fastapi import FastAPI  # type: ignore
-from fastapi.responses import StreamingResponse  # type: ignore
-from openai import OpenAI  # type: ignore
+import os
+from fastapi import FastAPI, Depends
+from fastapi.responses import StreamingResponse
+from fastapi_clerk_auth import (
+    ClerkConfig,
+    ClerkHTTPBearer,
+    HTTPAuthorizationCredentials,
+)
+from openai import OpenAI
 
 app = FastAPI()
 
+clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
+clerk_guard = ClerkHTTPBearer(clerk_config)
+
 
 @app.get("/api")
-def idea():
+def idea(
+    creds: HTTPAuthorizationCredentials = Depends(clerk_guard),
+):  # Protecting the endpoint with Clerk authentication
+    user_id = creds.decoded[
+        "sub"
+    ]  # User ID from JWT for potential future functionality
     client = OpenAI()
     prompt = [
         {
