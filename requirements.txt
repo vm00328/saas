@@ -2,3 +2,4 @@ fastapi
 openai
 uvicorn
 fastapi-clerk-auth
+pydantic
