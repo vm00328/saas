@@ -1,7 +1,14 @@
 # MediNotes Pro — Design Decisions & Feature Summary
 
 **Last Updated:** April 2026  
-**Purpose:** Reference document summarising key design decisions, feature rationale, and architectural choices made during the initial planning phase. Use this as a companion to the PRD.
+**Version:** 1.1  
+**Author:** Solo Developer  
+**Purpose:** Reference document summarising key design decisions, feature rationale, and architectural choices made during the initial planning phase. Use this as a companion to the PRD (v1.1).
+
+| Version | Changes |
+|---|---|
+| 1.0 | Initial draft |
+| 1.1 | Updated model to `gpt-5-nano`; confirmed Resend; resolved all open questions; updated HIPAA stance; confirmed 7-year retention; added patient link notification as confirmed decision; added single-developer context |
 
 ---
 
@@ -13,10 +20,12 @@ The app is a working but minimal product. It allows an authenticated, subscribed
 - Frontend: Next.js (Page Router), TypeScript
 - Backend: FastAPI (Python)
 - Auth & Billing: Clerk
-- AI: OpenAI (`gpt-4o-mini` / equivalent)
+- AI: OpenAI (`gpt-5-nano`)
 - Deployment: Vercel
 
 **Critical gap identified:** The absence of a database is the single most important constraint on what can be built next. Almost every planned feature requires persistence, and this must be addressed before anything else.
+
+**Project context:** This is a solo developer project. There are no separate engineering, product, or legal teams. All implementation, prioritisation, and compliance decisions are owned and executed by a single developer. This has direct implications for sequencing — features must be built strictly one phase at a time, with no parallel workstreams.
 
 ---
 
@@ -53,7 +62,7 @@ The original app assumed a single user type (doctor). The expanded model introdu
 
 **Notable considerations:**
 - Patient search returns only email until the link is established, to minimise PII exposure.
-- The question of whether patients should receive a notification email when a doctor links them is an open question (OQ-04 in the PRD) — the recommendation is yes, for both trust and GDPR alignment.
+- When a doctor links a patient, an automated notification email is sent to the patient informing them of the link. The email includes the doctor's full name and a support contact in case the link was made in error. This was confirmed as a requirement for both trust and GDPR alignment.
 
 ---
 
@@ -131,9 +140,9 @@ This is the most important trust and safety decision in the clinical workflow. T
 
 ## 7. Patient Email Delivery
 
-**Decision: Resend as the email provider (recommended); SendGrid as the alternative.**
+**Decision: Resend is the confirmed email provider.**
 
-Resend was recommended over SendGrid for its developer experience and native Vercel/Next.js integration. This remains an open question (OQ-01) pending a final product decision.
+Resend was chosen over SendGrid for its developer experience and native Vercel/Next.js integration. This decision is final.
 
 **Key design rules:**
 - Patient email address is always fetched from `users.email` — it is never manually entered by a doctor.
@@ -156,7 +165,7 @@ Whisper was chosen over the browser-native Web Speech API specifically for its s
 - Transcription is appended to (not replaces) existing notes text, giving the doctor full control.
 - Maximum recording duration: 5 minutes per session.
 
-This feature is relatively self-contained and does not depend on Phase 1 or 2 features, making it a good parallel workstream if capacity allows.
+This feature is relatively self-contained and does not depend on Phase 1 or 2 features, making it a natural first item in Phase 3.
 
 ---
 
@@ -224,22 +233,22 @@ The following features were discussed and deliberately excluded from the MVP roa
 | Lab PDF upload | Complex RAG implementation; deferred until core workflow is stable. |
 | Feedback loop (thumbs up/down on summaries) | Low priority for MVP; data has value once volume exists. |
 | In-app patient portal | Email delivery is sufficient for MVP; a portal adds auth complexity for patients. |
-| Formal HIPAA certification | Best-effort compliance at MVP; certification to follow post-launch (OQ-02). |
+| Formal HIPAA certification | Best-effort compliance at MVP; formal certification will be pursued post-launch. All design decisions must be made with future certification in mind. |
 | Admin dashboard UI | Supabase dashboard is sufficient at MVP scale. |
 
 ---
 
-## 14. Open Questions
+## 14. Resolved Decisions
 
-These questions were identified during planning and require a decision before or during the relevant phase:
+All planning-phase questions have been resolved. They are recorded here for traceability.
 
-| # | Question | Phase | Recommendation |
+| # | Question | Decision | Rationale |
 |---|---|---|---|
-| OQ-01 | Email provider: Resend or SendGrid? | Phase 2 | Resend — better DX, Vercel-native. |
-| OQ-02 | HIPAA: best-effort compliance at MVP or pursue formal certification? | Pre-launch | Best-effort MVP; certify post-launch. |
-| OQ-03 | Data retention period for visit notes and summaries? | Phase 1 | 7 years, in line with standard medical record retention. |
-| OQ-04 | Should patients receive a notification email when a doctor links them? | Phase 1 | Yes — trust and GDPR alignment. |
-| OQ-05 | Is a super-admin / practice manager role needed in future? | Post-MVP | To be scoped in a later PRD. |
+| OQ-01 | Email provider — Resend or SendGrid? | **Resend** | Better developer experience; native Vercel/Next.js integration. |
+| OQ-02 | HIPAA: best-effort at MVP or formal certification? | **Best-effort at MVP; certify post-launch** | Solo developer; certification requires significant process overhead. Design with future certification in mind throughout. |
+| OQ-03 | Data retention period? | **7 years** | Standard medical record retention practice; no shorter period is common in this context. |
+| OQ-04 | Patient notification when a doctor links them? | **Yes** | Required for trust and GDPR alignment. Email includes doctor name and a support contact. |
+| OQ-05 | Super-admin / practice manager role? | **Deferred to post-MVP** | No multi-doctor or practice-level use case in scope for MVP. To be scoped in a future PRD. |
 
 ---
 
@@ -271,4 +280,4 @@ The dependency chain that drove this ordering:
 
 > **Structured output → Patient profiles + consent → Review/approval workflow → Email delivery → Safety flags**
 
-Voice input and the blood results interpreter are relatively self-contained and could run as parallel workstreams from Phase 2 onwards if capacity allows.
+Phases are strictly sequential given the solo developer constraint. No parallel workstreams are planned.
