@@ -1,9 +1,15 @@
 # Product Requirements Document
 ## MediNotes Pro — MVP Feature Expansion
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** April 2026  
 **Status:** Draft  
+**Author:** Vladislav Manolov
+
+| Version | Changes |
+|---|---|
+| 1.0 | Initial draft |
+| 1.1 | Updated model to `gpt-5-nano`; confirmed Resend as email provider; resolved all open questions; added single-developer constraint; updated HIPAA stance; confirmed 7-year data retention; added patient link notification requirement |
 
 ---
 
@@ -37,10 +43,12 @@ This PRD covers four phases of development:
 2. The app will initially launch in an English-speaking market; multi-language support is deferred.
 3. Lab PDF upload is deferred to a post-MVP release.
 4. The feedback loop (summary ratings) is deferred to Phase 4.
-5. The app uses `gpt-4o-mini` (or equivalent) for all AI features.
+5. The app uses `gpt-5-nano` for all AI features.
 6. **Supabase (PostgreSQL)** is the chosen persistence layer.
 7. The existing stack (Next.js Page Router, FastAPI, Clerk, Vercel) remains unchanged.
-8. HIPAA compliance is a target; all design decisions should be made with this in mind.
+8. The app operates under best-effort HIPAA compliance at MVP. Formal HIPAA certification will be pursued post-launch; all design decisions must be made with this future certification in mind.
+9. Data retention period for visit notes and summaries is **7 years**, in line with standard medical record retention practices.
+10. **This is a solo developer project.** There are no separate engineering, product, or legal teams. All implementation, product, and compliance decisions are owned by a single developer.
 
 ---
 
@@ -118,9 +126,11 @@ This PRD covers four phases of development:
 
 #### Functional Requirements
 - On first sign-in (detected by absence of a `users` record for the Clerk `user_id`), the user is presented with a role selection screen.
-- Role is written to the `users` table and cannot be changed without admin intervention.
+- Role is written to the `users` table and cannot be changed without manual database intervention.
 - Doctors can search for patients by email; the search only returns users with `role = 'patient'`.
 - A successful search result allows the doctor to "Add Patient", which creates a `doctor_patient_links` record.
+- When a doctor links a patient, an automated notification email is sent to the patient's registered email address informing them that they have been linked to a doctor on MediNotes Pro.
+- The notification email includes the doctor's full name and a note directing the patient to contact the app's support email if they believe this was done in error.
 - Route protection is enforced server-side: doctor routes return 403 for patient tokens, and vice versa.
 
 #### Non-Functional Requirements
@@ -225,7 +235,7 @@ Streaming a JSON response is complex to parse mid-flight. For Phase 1, switch to
 #### Functional Requirements
 - Email sending is triggered by the approval action (US-08 above).
 - The patient's email address is fetched from `users.email`; it is never entered manually by the doctor.
-- Email is sent via **Resend** (recommended) or SendGrid.
+- Email is sent via **Resend**.
 - The email template is branded (MediNotes Pro), includes the patient's name, visit date, and the approved body text.
 - On successful delivery, `summaries.sent_at` is set to the current UTC timestamp and `status` is updated to `'sent'`.
 - On delivery failure, the error is logged and the doctor is notified in-app; the status remains `'approved'` so a retry can be attempted.
@@ -380,7 +390,7 @@ Streaming a JSON response is complex to parse mid-flight. For Phase 1, switch to
 | **Data in transit** | All traffic over HTTPS. |
 | **Environment variables** | All secrets (Supabase, OpenAI, Resend, Clerk) stored as environment variables; never in code. |
 | **Error handling** | All API errors return structured JSON `{ "error": "...", "code": "..." }`; no stack traces in production responses. |
-| **HIPAA alignment** | No PHI in logs. Audit trail maintained. Data deletion process documented. BAA with Supabase and Resend to be established. |
+| **HIPAA alignment** | Best-effort compliance at MVP. No PHI in logs. Audit trail maintained. Data deletion process documented. BAA with Supabase and Resend to be established before any PHI is transmitted. Formal certification to be pursued post-launch. |
 | **Accessibility** | UI components must meet WCAG 2.1 AA standards. |
 
 ---
@@ -398,12 +408,14 @@ The following features have been explicitly deferred:
 
 ---
 
-## 9. Open Questions
+## 9. Resolved Decisions
 
-| # | Question | Owner |
+The following questions were raised during planning and have been resolved. They are recorded here for reference.
+
+| # | Question | Decision |
 |---|---|---|
-| OQ-01 | Which email provider will be used — Resend or SendGrid? Recommendation: Resend for its developer experience and Next.js integration. | Engineering |
-| OQ-02 | Will the app pursue formal HIPAA certification at MVP, or operate under best-effort compliance with a view to certification post-launch? | Product / Legal |
-| OQ-03 | What is the data retention period for visit notes and summaries? Recommendation: 7 years, in line with standard medical record retention practices. | Product / Legal |
-| OQ-04 | Should patients be notified when a doctor links them to their account? Recommendation: Yes, via an automated email. | Product |
-| OQ-05 | Is there a need for a super-admin role (e.g. practice manager) in a future phase? | Product |
+| OQ-01 | Which email provider — Resend or SendGrid? | **Resend.** Chosen for its developer experience and native Vercel/Next.js integration. |
+| OQ-02 | Formal HIPAA certification at MVP, or best-effort compliance? | **Best-effort at MVP.** Formal certification will be pursued post-launch. All design decisions must be made with future certification in mind. |
+| OQ-03 | Data retention period for visit notes and summaries? | **7 years**, in line with standard medical record retention practices. |
+| OQ-04 | Should patients receive a notification email when a doctor links them? | **Yes.** Notification email sent on link creation. Includes doctor name and an error-reporting contact. See section 3.2. |
+| OQ-05 | Is a super-admin / practice manager role needed? | **Deferred.** To be scoped in a future PRD when multi-doctor or practice-level use cases are considered. |
