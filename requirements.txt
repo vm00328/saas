@@ -3,3 +3,4 @@ openai
 uvicorn
 fastapi-clerk-auth
 pydantic
+supabase

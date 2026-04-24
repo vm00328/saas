@@ -9,6 +9,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 # Clerk authentication (One ClerkHTTPBearer instance is created here and injected into all routers)
 clerk_config = ClerkConfig(jwks_url=os.getenv("CLERK_JWKS_URL"))
 clerk_guard = ClerkHTTPBearer(clerk_config)
@@ -22,3 +23,11 @@ patients.clerk_guard = clerk_guard
 app.include_router(users.router)
 app.include_router(patients.router)
 app.include_router(consultations.router)
+
+
+@app.get("api/health", tags=["health"])
+def health():
+    """
+    Returns 200 if the service is running. Used to confirm the FastAPI function is reachable after every deployment.
+    """
+    return {"status": "ok"}
