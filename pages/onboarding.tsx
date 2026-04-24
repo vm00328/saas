@@ -25,7 +25,7 @@ type Role = "doctor" | "patient";
 type Step = "select_role" | "complete_profile";
 
 export default function Onboarding() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();
   const router = useRouter();
 
@@ -44,7 +44,7 @@ export default function Onboarding() {
   // If already registered, redirect to the correct home page.
   // Prevents a registered user from accessing onboarding again.
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !isSignedIn) return;
     apiRequest<UserRecord | null>("/api/users/me", getToken)
       .then((record) => {
         if (record?.role === "doctor") router.replace("/dashboard");
@@ -55,7 +55,7 @@ export default function Onboarding() {
         // with registration and the backend will handle duplicates.
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
+  }, [isLoaded, isSignedIn]);
 
   // Extracted to a named handler to avoid inline block syntax inside JSX
   function handleBackToRoleSelect() {
