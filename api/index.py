@@ -25,7 +25,7 @@ app.include_router(patients.router)
 app.include_router(consultations.router)
 
 
-@app.get("api/health", tags=["health"])
+@app.get("/api/health", tags=["health"])
 def health():
     """
     Returns 200 if the service is running. Used to confirm the FastAPI function is reachable after every deployment.
